@@ -2,3 +2,13 @@
     margin: auto;
     text-align: center;
 }
+
+#legend-container {
+    width: 200px; 
+    height: 400px; 
+    overflow-x: auto;
+    overflow-y: auto; 
+    border: 1px solid #ccc;
+    padding: 5px;
+}
+
