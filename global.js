@@ -59,10 +59,86 @@
 
 // }
 
+// d3.json("dengue_cases.json").then(function(data) {
+//     // Set up SVG dimensions
+//     const margin = {top: 40, right: 20, bottom: 50, left: 60};
+//     const width = 1000 - margin.left - margin.right;
+//     const height = 500 - margin.top - margin.bottom;
+
+//     const svg = d3.select("#chart")
+//         .append("svg")
+//         .attr("width", width + margin.left + margin.right)
+//         .attr("height", height + margin.top + margin.bottom)
+//         .append("g")
+//         .attr("transform", `translate(${margin.left},${margin.top})`);
+
+//     // Parse data
+//     const municipalities = d3.groups(data, d => d.Municipality);
+    
+//     // Scales
+//     const x = d3.scaleLinear()
+//         .domain(d3.extent(data, d => d.Year))
+//         .range([0, width]);
+
+//     const y = d3.scaleLinear()
+//         .domain([0, d3.max(data, d => d.Cases)])
+//         .nice()
+//         .range([height, 0]);
+
+//     const color = d3.scaleOrdinal(d3.schemeCategory10)
+//         .domain(municipalities.map(d => d[0]));
+
+//     // Line generator
+//     const line = d3.line()
+//         .x(d => x(d.Year))
+//         .y(d => y(d.Cases));
+
+//     // Draw lines for each municipality
+//     svg.selectAll(".line")
+//         .data(municipalities)
+//         .enter()
+//         .append("path")
+//         .attr("class", "line")
+//         .attr("fill", "none")
+//         .attr("stroke", d => color(d[0]))
+//         .attr("stroke-width", 2)
+//         .attr("d", d => line(d[1]));
+
+//     // X-axis
+//     svg.append("g")
+//         .attr("transform", `translate(0,${height})`)
+//         .call(d3.axisBottom(x).tickFormat(d3.format("d")));
+
+//     // Y-axis
+//     svg.append("g").call(d3.axisLeft(y));
+
+//     // Legend inside the scrollable container
+//     const legendSvg = d3.select("#legend-svg")
+//         .attr("height", municipalities.length * 20); // Adjust dynamically
+
+//     const legend = legendSvg.append("g")
+//         .attr("transform", `translate(10,10)`);
+
+//     municipalities.forEach((d, i) => {
+//         legend.append("circle")
+//             .attr("cx", 10)
+//             .attr("cy", i * 20)
+//             .attr("r", 5)
+//             .style("fill", color(d[0]));
+
+//         legend.append("text")
+//             .attr("x", 20)
+//             .attr("y", i * 20 + 5)
+//             .text(d[0])
+//             .style("font-size", "12px")
+//             .attr("alignment-baseline", "middle");
+//     });
+
+// });
+
 d3.json("dengue_cases.json").then(function(data) {
-    // Set up SVG dimensions
-    const margin = {top: 40, right: 100, bottom: 50, left: 60};
-    const width = 900 - margin.left - margin.right;
+    const margin = {top: 40, right: 20, bottom: 50, left: 60};
+    const width = 1000 - margin.left - margin.right;
     const height = 500 - margin.top - margin.bottom;
 
     const svg = d3.select("#chart")
@@ -72,10 +148,8 @@ d3.json("dengue_cases.json").then(function(data) {
         .append("g")
         .attr("transform", `translate(${margin.left},${margin.top})`);
 
-    // Parse data
     const municipalities = d3.groups(data, d => d.Municipality);
     
-    // Scales
     const x = d3.scaleLinear()
         .domain(d3.extent(data, d => d.Year))
         .range([0, width]);
@@ -88,12 +162,20 @@ d3.json("dengue_cases.json").then(function(data) {
     const color = d3.scaleOrdinal(d3.schemeCategory10)
         .domain(municipalities.map(d => d[0]));
 
-    // Line generator
     const line = d3.line()
         .x(d => x(d.Year))
         .y(d => y(d.Cases));
 
-    // Draw lines for each municipality
+    const tooltip = d3.select("body").append("div")
+        .attr("class", "tooltip")
+        .style("position", "absolute")
+        .style("visibility", "hidden")
+        .style("background-color", "rgba(0, 0, 0, 0.7)")
+        .style("color", "white")
+        .style("padding", "5px")
+        .style("border-radius", "4px")
+        .style("font-size", "12px");
+
     svg.selectAll(".line")
         .data(municipalities)
         .enter()
@@ -102,36 +184,29 @@ d3.json("dengue_cases.json").then(function(data) {
         .attr("fill", "none")
         .attr("stroke", d => color(d[0]))
         .attr("stroke-width", 2)
-        .attr("d", d => line(d[1]));
+        .attr("d", d => line(d[1]))
+        .on("mouseover", function(event, d) {
+            d3.selectAll(".line")
+                .attr("stroke-opacity", 0.2); 
+            d3.select(this)
+                .attr("stroke-opacity", 1); 
+            
+            tooltip.style("visibility", "visible")
+                .text(d[0]); 
+        })
+        .on("mousemove", function(event) {
+            tooltip.style("top", (event.pageY + 10) + "px")
+                .style("left", (event.pageX + 10) + "px");
+        })
+        .on("mouseout", function() {
+            d3.selectAll(".line")
+                .attr("stroke-opacity", 1);
+            tooltip.style("visibility", "hidden");
+        });
 
-    // X-axis
     svg.append("g")
         .attr("transform", `translate(0,${height})`)
         .call(d3.axisBottom(x).tickFormat(d3.format("d")));
 
-    // Y-axis
     svg.append("g").call(d3.axisLeft(y));
-
-    // Legend inside the scrollable container
-    const legendSvg = d3.select("#legend-svg")
-        .attr("height", municipalities.length * 20); // Adjust dynamically
-
-    const legend = legendSvg.append("g")
-        .attr("transform", `translate(10,10)`);
-
-    municipalities.forEach((d, i) => {
-        legend.append("circle")
-            .attr("cx", 10)
-            .attr("cy", i * 20)
-            .attr("r", 5)
-            .style("fill", color(d[0]));
-
-        legend.append("text")
-            .attr("x", 20)
-            .attr("y", i * 20 + 5)
-            .text(d[0])
-            .style("font-size", "12px")
-            .attr("alignment-baseline", "middle");
-    });
-
 });
